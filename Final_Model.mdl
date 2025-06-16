@@ -1,0 +1,521 @@
+{UTF-8}
+Awareness Programs Index=
+	0.15
+	~	 [0,1,0.05]
+	~	Public education campaigns to inform citizens about mosquito breeding \
+		prevention methods and encourage proactive behaviors, range from 0 \
+		(minimal) to 1 (plenty)
+	|
+
+Interventions Index=
+	(Awareness Programs Index+Cleaning Programs Index+Sanitation Checks Index)/3
+	~	 [0,1]
+	~	How much effort is being made to eliminate breeding sites, ranges from 0 \
+		to 1.
+	|
+
+Creation of Breeding Sites=
+	Base Creation Rate*(1+((Stagnant Water Index+(1-Waste Disposal Index))/4))
+	~	Sites/Month
+	~	Total rate of sites created per month.
+	|
+
+Sanitation Checks Index=
+	0.2
+	~	 [0,1,0.05]
+	~	Systematic inspections and maintenance of sanitation infrastructure, range \
+		from 0 (minimal) to 1 (plenty).
+	|
+
+Elimination of Breeding Sites=
+	Base Elimination Rate * (1 + ((Drainage Index*Waste Disposal Index*Interventions Index\
+		)))
+	~	Sites/Month
+	~	Total rate of sites removed/eliminated per month.
+	|
+
+Stagnant Water Index=
+	((1-Drainage Index)+Rainfall Index+Water Storage Index)
+	~	 [0,?]
+	~	Density of Stagnant Water, a high value increases the potential for \
+		breeding sites.
+	|
+
+Cleaning Programs Index=
+	0.3
+	~	 [0,1,0.05]
+	~	Regular municipal or community-based efforts to clean stagnant water \
+		areas, remove waste, and eliminate potential mosquito breeding grounds, \
+		range from 0 (minimal) to 1 (plenty).
+	|
+
+Rainfall Index=
+	Rainfall Level/57.4*1
+	~	 [0,1]
+	~		|
+
+"Natural Mortality Rate (Monthly)"=
+	1-(1-"Natural Mortality Rate (Daily)")^30
+	~	
+	~		|
+
+Mosquito Death Rate=
+	"Natural Mortality Rate (Monthly)"*Fogging Intervention Effect*Insecticide Usage Effect\
+		*Temperature Mortality Factor
+	~	
+	~		|
+
+Fogging Intervention Effect=
+	1-(1-Fogging Intervention Index)^2
+	~	
+	~		|
+
+Fogging Intervention Index=
+	0.4
+	~	 [0,1,0.1]
+	~		|
+
+Insecticide Efficiency=
+	0.6
+	~	 [0,1,0.1]
+	~		|
+
+Insecticide Coverage=
+	0.5
+	~	 [0,1,0.1]
+	~		|
+
+Rainfall Level = WITH LOOKUP (
+	MODULO( Time , 12 ),
+		 ([(0,1.8)-(11,57.4)], (0, 4.6), (1,5.1), (2, 2.9), (3,1.1), (4,1.8), (5,12), (6,55.3\
+		), (7,57.4), (8,18.4), (9,3.2), (10, 2.2), (11, 2.7)))
+	~	
+	~	Intensity of rain events, range from 0 (no rain) to 2 (monsoon rain)
+	|
+
+Insecticide Usage Effect=
+	Insecticide Coverage*Insecticide Efficiency
+	~	
+	~		|
+
+Temperature Mortality Factor=
+	IF THEN ELSE(Temperature < 16, 1 + (16 - Temperature) * 0.03,
+	  IF THEN ELSE(Temperature > 32, 1 + (Temperature - 32) * 0.05, 1))
+	~	
+	~		|
+
+Recovery Rate=
+	Base Recovery Rate*(Healthcare Access)*(1-Severity of Outbreak)
+	~	
+	~		|
+
+Infection Intervention Index=
+	0.5
+	~	 [0,1,0.05]
+	~	How aware the human population is and is actively trying to avoid \
+		infections. Examples being netbeds, mosquito repellants, protective \
+		clothing, vaccinations.
+	|
+
+Base Human Population=
+	9.6e+06
+	~	
+	~		|
+
+Base Recovery Rate=
+	0.95
+	~	
+	~		|
+
+Infectious Mosquitoes Fraction=
+	0.15
+	~	 [0,1]
+	~		|
+
+Healthcare Access=
+	0.3
+	~	 [0,1,0.1]
+	~	More easier to access healthcare, higher the index. Ease of access can be \
+		done by more facilities like popup clinics, mobile vans etc.
+	|
+
+Temperature Coefficient=
+	IF THEN ELSE( Temperature < 16 , 0 , IF THEN ELSE( Temperature < 25 , ((Temperature-\
+		16)/9) , IF THEN ELSE( Temperature <= 32 , 1 , IF THEN ELSE( Temperature < 35 , 1 -\
+		 ((Temperature - 32) * 0.067) , 0.5 )) ) )
+	~	Dmnl
+	~	Effect of temperature on mosquito birth rate.
+	|
+
+Infections=
+	IF THEN ELSE( Mosquito Population > 0,
+	    (Infection Rate * (Infectious Mosquitoes Fraction * (Mosquito Population)) * (Susceptible Human Population
+	/Base Human Population
+	))*(1 - (0.9*
+	Infection Intervention Index
+	)),
+	    0)
+	~	
+	~		|
+
+"Natural Mortality Rate (Daily)"=
+	0.1
+	~	Dmnl
+	~		|
+
+Mosquito Births=
+	Birth Rate Per Site*(Temperature Coefficient)*Mosquito Breeding Sites
+	~	Mosquitoes/Month
+	~		|
+
+Severity of Outbreak=
+	0.8
+	~	 [0,1,0.1]
+	~	Higher index, more severe the outbreak and difficult to control.
+	|
+
+Base Creation Rate=
+	100000
+	~	Sites/Month
+	~	Base rate for how many sites are created per month.
+	|
+
+Base Elimination Rate=
+	50000
+	~	Sites/Month
+	~		|
+
+Birth Rate Per Site=
+	150
+	~	Mosquitoes/Site/Month
+	~	1 Month = 3 cycles, 1 cycle = 10 days, 50 mosquitoes per site per cycle
+	|
+
+Infected Human Population= INTEG (
+	Infections-Recoveries,
+		5300)
+	~	Humans
+	~		|
+
+Infection Rate=
+	0.0005
+	~	 [0,1,0.0005]
+	~	How likely it is for a mosquito to transmit disease to a susceptible human.
+	|
+
+Mosquito Breeding Sites= INTEG (
+	Creation of Breeding Sites-Elimination of Breeding Sites,
+		5000)
+	~	Sites
+	~		|
+
+Mosquito Deaths=
+	Mosquito Death Rate*Mosquito Population
+	~	Mosquitoes/Month
+	~		|
+
+Mosquito Population= INTEG (
+	Mosquito Births-Mosquito Deaths,
+		5e+06)
+	~	Mosquitoes
+	~		|
+
+Drainage Index=
+	0.7
+	~	 [0.1,1,0.05]
+	~	How efficient the drainage system is, how much of the waste is drained?
+	|
+
+Recovered Human Population= INTEG (
+	Recoveries,
+		5035)
+	~	Humans
+	~		|
+
+Recoveries=
+	Infected Human Population*Recovery Rate
+	~	
+	~		|
+
+Susceptible Human Population= INTEG (
+	-Infections,
+		9.6e+06)
+	~	Humans
+	~		|
+
+Temperature=
+	30
+	~	Degrees [15,40]
+	~		|
+
+Waste Disposal Index=
+	0.7
+	~	 [0.1,1,0.05]
+	~	How good waste management is, ranges from 0.1 (poor) to 1 (good).
+	|
+
+Water Storage Index=
+	0.65
+	~	 [0,1,0.05]
+	~	How common are risky open-containers of water storage, range from 0 (no \
+		households have water storage) to 1 (all households have water storage)
+	|
+
+********************************************************
+	.Control
+********************************************************~
+		Simulation Control Parameters
+	|
+
+FINAL TIME  = 24
+	~	Month
+	~	The final time for the simulation.
+	|
+
+INITIAL TIME  = 0
+	~	Month
+	~	The initial time for the simulation.
+	|
+
+SAVEPER  = 
+        TIME STEP
+	~	Month [0,?]
+	~	The frequency with which output is stored.
+	|
+
+TIME STEP  = 1
+	~	Month [0,?]
+	~	The time step for the simulation.
+	|
+
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 1
+$-1--1--1,0,|12||-1--1--1|-1--1--1|-1--1--1|-1--1--1|-1--1--1|96,96,74,2
+10,1,Mosquito Population,607,572,70,31,3,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,2,Infected Human Population,734,213,69,32,3,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,3,Susceptible Human Population,429,212,67,33,3,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,4,Recovered Human Population,1035,217,71,31,3,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,5,Mosquito Breeding Sites,775,789,69,30,3,3,0,0,-1,1,0,0,0,0,0,0,0,0
+12,6,48,334,572,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,7,9,6,100,0,0,22,0,192,0,-1--1--1,,1|(379,572)|
+1,8,9,1,4,0,0,22,0,192,0,-1--1--1,,1|(482,572)|
+11,9,0,421,572,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,10,Mosquito Births,421,602,49,22,40,3,0,4,-1,1,0,0,0-0-0,255-255-255,|||0-0-0,0,0,0,0,0,0
+12,11,48,887,572,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,12,14,1,100,0,0,22,0,192,0,-1--1--1,,1|(724,572)|
+1,13,14,11,4,0,0,22,0,192,0,-1--1--1,,1|(830,572)|
+11,14,0,777,572,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,15,Mosquito Deaths,777,602,42,22,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,16,18,3,100,0,0,22,0,192,0,-1--1--1,,1|(539,211)|
+1,17,18,2,4,0,0,22,0,192,0,-1--1--1,,1|(629,211)|
+11,18,0,588,211,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,19,Infections,588,241,42,22,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,20,22,2,100,0,0,22,0,192,0,-1--1--1,,1|(836,215)|
+1,21,22,4,4,0,0,22,0,192,0,-1--1--1,,1|(922,215)|
+11,22,0,875,215,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,23,Recoveries,875,245,42,22,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+12,24,48,502,789,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,25,27,24,100,0,0,22,0,192,0,-1--1--1,,1|(556,789)|
+1,26,27,5,4,0,0,22,0,192,0,-1--1--1,,1|(659,789)|
+11,27,0,606,789,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,28,Creation of Breeding Sites,606,819,50,22,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+12,29,48,1050,792,10,8,0,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,30,32,5,100,0,0,22,0,192,0,-1--1--1,,1|(890,792)|
+1,31,32,29,4,0,0,22,0,192,0,-1--1--1,,1|(994,792)|
+11,32,0,942,792,6,8,34,3,0,0,1,0,0,0,0,0,0,0,0,0
+10,33,Elimination of Breeding Sites,942,822,57,22,40,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,34,5,10,1,0,43,0,1,192,0,0-0-0,|||0-0-0,1|(534,684)|
+10,35,Infection Rate,683,313,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,36,Birth Rate Per Site,298,484,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,37,36,9,1,0,43,0,0,192,0,-1--1--1,,1|(364,508)|
+1,38,2,23,1,0,43,0,0,192,0,-1--1--1,,1|(839,285)|
+10,39,Recovery Rate,972,312,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,40,39,23,1,0,43,0,0,192,0,-1--1--1,,1|(906,304)|
+10,41,Stagnant Water Index,469,932,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,42,Rainfall Level,221,833,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,43,Drainage Index,642,1076,50,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,44,Water Storage Index,271,1029,50,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,45,Base Creation Rate,395,838,46,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,46,Temperature,168,484,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,47,Temperature Coefficient,210,581,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,48,47,10,1,0,43,0,0,192,0,-1--1--1,,1|(349,627)|
+1,49,43,41,0,0,45,0,0,192,0,-1--1--1,,1|(0,0)|
+1,50,44,41,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,51,45,28,1,0,43,0,0,192,0,-1--1--1,,1|(485,823)|
+1,52,41,28,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,53,Mosquito Death Rate,1013,564,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,54,53,15,1,0,43,0,0,192,0,-1--1--1,,1|(894,620)|
+1,55,1,15,1,0,43,0,0,192,0,-1--1--1,,1|(744,617)|
+10,56,Base Elimination Rate,1184,850,53,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,57,Waste Disposal Index,712,932,49,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,58,Interventions Index,1085,907,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,59,56,33,1,0,43,0,0,192,0,-1--1--1,,1|(1101,824)|
+1,60,57,33,1,0,0,0,0,192,0,-1--1--1,,1|(822,927)|
+1,61,46,47,1,0,43,0,0,192,0,-1--1--1,,1|(173,524)|
+10,62,"Natural Mortality Rate (Daily)",908,429,54,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,63,Infectious Mosquitoes Fraction,377,299,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+10,64,Infection Intervention Index,400,372,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,65,3,18,1,0,43,0,0,192,0,-1--1--1,,1|(496,108)|
+1,66,63,19,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,67,64,19,1,0,43,0,0,192,0,-1--1--1,,1|(491,318)|
+1,68,35,19,1,0,43,0,0,192,0,-1--1--1,,1|(655,269)|
+1,69,1,19,1,0,43,0,1,192,0,0-0-0,|||0-0-0,1|(616,386)|
+10,70,Base Human Population,541,351,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,71,70,19,1,0,43,0,0,192,0,-1--1--1,,1|(567,307)|
+10,72,Healthcare Access,1143,317,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,73,72,39,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,74,Severity of Outbreak,1227,281,50,22,8,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,75,74,39,1,0,43,0,0,192,0,-1--1--1,,1|(1199,274)|
+10,76,Base Recovery Rate,1102,367,75,30,0,3,0,0,-1,1,0,0,0,0,0,0,0,0
+1,77,76,39,1,0,43,0,0,192,0,-1--1--1,,1|(1032,364)|
+10,78,"Natural Mortality Rate (Monthly)",922,496,54,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,79,62,78,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,80,Fogging Intervention Index,1249,487,53,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,81,Fogging Intervention Effect,1190,562,50,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,82,80,81,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,83,Insecticide Usage Effect,1026,653,57,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,84,Insecticide Coverage,1194,660,50,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,85,Insecticide Efficiency,1126,714,52,17,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,86,85,83,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+1,87,84,83,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,88,Temperature Mortality Factor,1057,473,55,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,89,Temperature,1057,426,39,9,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,90,89,88,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,91,78,53,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,92,88,53,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,93,81,53,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,94,83,53,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,95,Time,192,783,19,9,8,2,0,3,-1,0,0,0,128-128-128,0-0-0,|||128-128-128,0,0,0,0,0,0
+1,96,95,42,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+10,97,Rainfall Index,290,903,42,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,98,42,97,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,99,97,41,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,100,43,33,1,0,43,0,0,192,0,-1--1--1,,1|(929,930)|
+1,101,57,28,0,0,45,0,0,192,0,-1--1--1,,1|(0,0)|
+10,102,Cleaning Programs Index,1154,1042,61,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,103,Sanitation Checks Index,996,1011,58,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+10,104,Awareness Programs Index,1294,976,51,22,8,3,0,0,-1,0,0,0,0,0,0,0,0,0
+1,105,103,58,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,106,102,58,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,107,104,58,0,0,43,0,0,192,0,-1--1--1,,1|(0,0)|
+1,108,58,33,0,0,0,0,0,192,0,-1--1--1,,1|(0,0)|
+\\\---/// Sketch information - do not modify anything except names
+V300  Do not put anything below this section - it will be ignored
+*View 2
+$-1--1--1,0,Vensim Sans|20||0-0-0|-1--1--1|-1--1--1|-1--1--1|-1--1--1|96,96,45,2
+12,1,0,2056,90,171,78,8,79,0,0,0,0,0,0,0,0,0,0,0,0
+Temperature,20,40,1
+12,2,0,2062,241,178,71,8,79,0,0,0,0,0,0,0,0,0,0,0,0
+Rainfall Level,0,2,0.1
+12,3,0,2072,514,181,77,8,79,0,0,0,0,0,0,0,0,0,0,0,0
+Drainage Index,0.5,1,0.1
+12,4,0,2063,412,175,45,8,79,0,0,0,0,0,0,0,0,0,0,0,0
+Water Storage Index,0,2,0.1
+12,5,0,2073,667,178,83,8,79,0,0,0,0,0,0,0,0,0,0,0,0
+Waste Disposal Index,0.1,1,0.1
+12,6,0,2077,822,182,87,8,79,0,0,0,0,0,0,0,0,0,0,0,0
+Infection Intervention Index,0,1,0.05
+12,7,0,833,267,308,206,8,15,0,0,1,0,0,0,0,0,0,0,0,0
+Mosquito_Births_1
+12,8,0,1499,266,305,207,8,15,0,0,1,0,0,0,0,0,0,0,0,0
+Mosquito_Breeding_Sites
+12,9,0,1502,706,309,207,8,15,0,0,1,0,0,0,0,0,0,0,0,0
+Mosquito_Deaths
+12,10,0,838,697,310,201,8,15,0,0,1,0,0,0,0,0,0,0,0,0
+Susceptible_Human_Population_and_Infections
+///---\\\
+:GRAPH Mosquito_Births
+:TITLE Mosquito Births and Infections
+:SCALE
+:VAR Mosquito Births
+:DATASET 
+:LINE-WIDTH 1
+:SCALE
+:VAR Infections
+:DATASET 
+:LINE-WIDTH 1
+
+:GRAPH Mosquito_Births_0
+:TITLE Mosquito Births and Infections
+:SCALE
+:VAR Mosquito Births
+:DATASET 
+:LINE-WIDTH 1
+:SCALE
+:VAR Infections
+:DATASET 
+:LINE-WIDTH 1
+
+:GRAPH Mosquito_Births_1
+:TITLE Mosquito Births and Infections
+:SCALE
+:VAR Mosquito Births
+:DATASET 
+:LINE-WIDTH 1
+:SCALE
+:VAR Infections
+:DATASET 
+:LINE-WIDTH 1
+
+:GRAPH Mosquito_Breeding_Sites
+:TITLE Mosquito Breeding Sites
+:SCALE
+:VAR Mosquito Breeding Sites
+:DATASET 
+:LINE-WIDTH 1
+
+:GRAPH Mosquito_Deaths
+:TITLE Mosquito Deaths
+:SCALE
+:VAR Mosquito Deaths
+:DATASET 
+:LINE-WIDTH 1
+:SCALE
+:VAR Mosquito Death Rate
+:DATASET 
+:LINE-WIDTH 1
+
+:GRAPH Susceptible_Human_Population_and_Infections
+:TITLE Susceptible Human Population and Infections
+:SCALE
+:VAR Susceptible Human Population
+:DATASET 
+:LINE-WIDTH 1
+:SCALE
+:VAR Infections
+:DATASET 
+:LINE-WIDTH 1
+:L<%^E!@
+1:current.vdfx
+4:Time
+5:Infection Rate
+9:current
+19:74,0
+24:0
+25:24
+26:24
+23:0
+15:0,0,0,0,0,0
+27:0,
+34:0,
+42:0
+72:0
+73:0
+95:0
+96:0
+97:0
+77:0
+78:0
+102:1
+93:0
+94:0
+92:0
+91:0
+90:0
+87:0
+75:
+43:
+103:8,8,8,3,8
+105:0,0,0,0,0,0,0,0,0,0
+104:Vensim Sans|12||0-0-0|0-0-0|-1--1--1|0-0-255|192-192-192|-1--1--1
