@@ -1,4 +1,4 @@
-Modeling the system dynamics of dengue outbreaks in Karachi.
+**Modeling the system dynamics of dengue outbreaks in Karachi.**
 
 This repository details the work done in our FYP for our Modeling the Environment course ENV 244 at LUMS by Dr. Talha Manzoor. 
 
